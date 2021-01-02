@@ -1,3 +1,5 @@
+import os
+
 import requests
 from urllib.parse import quote
 from fastapi import FastAPI, Query
@@ -88,7 +90,8 @@ def search(auth_header, query: str, search_type: str):
 app = FastAPI()
 
 origins = [
-    "http://localhost:3000",
+    # "http://localhost:3000",
+    os.environ.get('FRONTEND_URL')
 ]
 
 app.add_middleware(
