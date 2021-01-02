@@ -1,13 +1,24 @@
 import requests
 from urllib.parse import quote
 from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 
 
-def get_playlists(auth_header, current_user_id, offset=0):
+def get_user_profile(auth_header):
+    endpoint = 'https://api.spotify.com/v1/me'
+    profile_res = requests.get(endpoint, headers=auth_header)
+    profile_data = profile_res.json()
+
+    return profile_data
+
+
+def get_playlists(auth_header, offset=0):
     """Lists the current user's playlists"""
     endpoint = f'https://api.spotify.com/v1/me/playlists?offset={offset}'
     playlists_res = requests.get(endpoint, headers=auth_header)
     playlist_data = playlists_res.json()
+
+    current_user_id = get_user_profile(auth_header)['id']
 
     playlists = []
     for playlist in playlist_data['items']:
@@ -75,6 +86,18 @@ def search(auth_header, query: str, search_type: str):
 
 app = FastAPI()
 
+origins = [
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/search/{search_type}/{query}")
 async def search_item(token: str, query: str, search_type: str):
@@ -96,7 +119,13 @@ def get_track_recommendations(token: str, artists: list = Query(['3MZsBdqDrRTJih
     return get_tracks(auth_header, artists, genres, tracks)
 
 
-@app.get("/playlists/{user_id}")
-def get_user_playlists(token: str, user_id: str):
+@app.get("/playlists")
+def get_user_playlists(token: str):
     auth_header = {'Authorization': f'Bearer {token}'}
-    return get_playlists(auth_header, user_id)
+    return get_playlists(auth_header)
+
+
+@app.get("/add_playlist/{playlist_id}/{track_uri}")
+def add_track_playlist(token: str, playlist_id: str, track_uri: str):
+    auth_header = {'Authorization': f'Bearer {token}'}
+    return add_to_playlist(auth_header, track_uri, playlist_id)
