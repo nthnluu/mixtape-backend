@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 def get_user_profile(auth_header):
+    """Gets the current user's Spotify profile"""
     endpoint = 'https://api.spotify.com/v1/me'
     profile_res = requests.get(endpoint, headers=auth_header)
     profile_data = profile_res.json()
